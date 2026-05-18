@@ -2,16 +2,15 @@
 
 **Course:** COMPE 475 – Microprocessors  
 **Institution:** San Diego State University  
-**Author:** Christopher John Macabenta Medina  
-**Module:** 15 – Hazard Detection & Resolution (Final)
+**Author:** Christopher John Macabenta Medina
 
 ---
 
 ## Overview
 
-Korra is a multi-agent AI system built with [LangGraph](https://github.com/langchain-ai/langgraph) that simulates how a modern CPU pipeline detects and resolves hazards. Each agent in the system maps to a functional unit in a real processor pipeline, and the supervisor acts as the CPU Control Unit — routing tasks, detecting conflicts, and applying resolution strategies in real time.
+Korra is a multi-agent AI system built with [LangGraph](https://github.com/langchain-ai/langgraph) that simulates how a modern CPU pipeline detects and resolves hazards. Each agent maps to a functional unit in a real processor pipeline, and the supervisor acts as the CPU Control Unit — decoding requests, routing them to the right worker, and applying resolution strategies when pipeline conflicts arise.
 
-The system is built on top of the LangGraph ReAct agent template and extended across four sections (Modules 13–15) to layer increasingly complex hazard mechanisms.
+The system implements all four classical CPU hazard types — structural, data forwarding, data stalling, and control — entirely in software using conversational AI agents.
 
 ---
 
@@ -30,31 +29,23 @@ The system is built on top of the LangGraph ReAct agent template and extended ac
    └───────────────────┘  └──────────────────┘  └──────────────────────┘
 ```
 
-The supervisor evaluates every incoming request, decodes its intent, and dispatches it to the correct worker agent — exactly like a CPU Control Unit decoding instructions and routing them to functional units.
+The supervisor evaluates every incoming request, decodes its intent, and dispatches it to the correct worker agent — mirroring how a real CPU Control Unit routes instructions to functional units.
 
 ---
 
-## Hazard Mechanisms (Sections 1–4)
+## What It Does
 
-### Section 1 — Structural Hazard
-- **Problem:** Two requests try to use the same worker (functional unit) simultaneously.
-- **Solution:** Per-worker FIFO queues + serialization. The supervisor holds back the second request until the first completes.
-- **Key file:** `graph.py` (`busy_workers`, `worker_queues`)
+### Structural Hazard Detection & Resolution
+When two requests compete for the same worker simultaneously, Korra detects the conflict and serializes execution using per-worker FIFO queues — preventing resource contention the same way a CPU stalls a conflicting instruction until the shared unit is free.
 
-### Section 2 — Data Hazard: Forwarding
-- **Problem:** A downstream agent needs a result before it has been written back.
-- **Solution:** The DB agent's output is forwarded directly to the Decision/Branch agent, bypassing the write-back stage.
-- **Key file:** `graph.py` (forwarding logic in `_wire_hazard_detection`)
+### Data Hazard — Forwarding
+When a downstream agent depends on a result that hasn't been written back yet, Korra bypasses the write-back stage and forwards the output directly — eliminating the stall that would otherwise occur.
 
-### Section 3 — Data Hazard: Stalling
-- **Problem:** A load-use dependency — the result isn't ready in time even with forwarding.
-- **Solution:** Bubble cycles are inserted to stall the pipeline until the value is available.
-- **Key file:** `graph.py` (`stall`, `bubble_cycle` from `hazard_logger`)
+### Data Hazard — Stalling (Bubble Cycles)
+For load-use dependencies that forwarding can't resolve, Korra inserts bubble cycles into the pipeline, holding back dependent operations until the required value is ready — matching real processor behavior under true data dependencies.
 
-### Section 4 — Control Hazard (Final)
-- **Problem:** Speculative execution — the pipeline fetches instructions down a predicted branch that turns out to be wrong.
-- **Solution:** A speculative queue tracker monitors in-flight dispatches. On a "no record found" result, the pipeline is flushed and rerouted to an error/help path.
-- **Key file:** `graph.py` (`control_hazard`, `flush` from `hazard_logger`)
+### Control Hazard — Speculative Execution & Flush
+Korra speculatively dispatches instructions down the predicted execution path. If the prediction is wrong (e.g., "no record found"), it detects the misprediction, flushes the speculative queue, and reroutes to the correct error or help path — just like a branch misprediction flush in a real CPU pipeline.
 
 ---
 
@@ -63,12 +54,12 @@ The supervisor evaluates every incoming request, decodes its intent, and dispatc
 ```
 korra/
 ├── src/react_agent/
-│   ├── graph.py              # Main supervisor graph + all 4 hazard mechanisms
+│   ├── graph.py              # Main supervisor graph + all hazard mechanisms
 │   ├── supervisor_agent.py   # CPU Control Unit (routing logic)
 │   ├── db_agent.py           # Database Search Agent (Memory Unit)
 │   ├── alu_agent.py          # Code Analysis Agent (ALU)
 │   ├── branch_agent.py       # Decision Routing Agent (Branch Unit)
-│   ├── hazard_logger.py      # Logging helpers for all hazard types
+│   ├── hazard_logger.py      # Hazard event logging for all four types
 │   ├── prompts.py            # System prompt definitions
 │   ├── state.py              # Shared graph state
 │   ├── context.py            # Runtime context configuration
@@ -142,20 +133,6 @@ korra/
 ## Model Configuration
 
 The system defaults to `claude-sonnet-4-5-20250929`. To switch models, update the model string in `src/react_agent/context.py` or pass it at runtime in LangGraph Studio.
-
----
-
-## Course Context
-
-This project was built incrementally across COMPE 475 modules:
-
-| Module | Topic |
-|---|---|
-| 13 | Pipeline foundation & supervisor routing |
-| 14 | Request pipeline implementation & worker agents |
-| 15 | Hazard detection (structural, data, control) |
-
-Each hazard section adds a new detection and resolution layer on top of the previous one, mirroring how real CPU microarchitecture handles pipeline conflicts.
 
 ---
 
