@@ -1,0 +1,22 @@
+# Python caches
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+
+# Database files (prevents copying local DB into the container)
+*.db
+*.sqlite3
+
+# LangGraph and project metadata
+.langgraph_api
+*.egg-info/
+.pytest_cache/
