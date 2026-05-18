@@ -2,8 +2,7 @@
 
 **Course:** COMPE 475 – Microprocessors  
 **Institution:** San Diego State University  
-**Author:** Christopher John Macabenta Medina  
-**Module:** 15 – Hazard Detection & Resolution (Final)
+**Author:** Christopher John Medina
 
 ---
 
