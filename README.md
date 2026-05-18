@@ -2,7 +2,11 @@
 
 **Course:** COMPE 475 – Microprocessors  
 **Institution:** San Diego State University  
+<<<<<<< HEAD
 **Author:** Christopher John Macabenta Medina
+=======
+**Author:** Christopher John Medina
+>>>>>>> 7247b11a34daa9cb4606284d46071e41bbd915c3
 
 ---
 
