@@ -1,84 +1,41 @@
-# Korra — CPU Hazard Detection & Resolution Agent System
+# Korra AI Agent
 
-**Course:** COMPE 475 – Microprocessors  
-**Institution:** San Diego State University  
-<<<<<<< HEAD
-**Author:** Christopher John Macabenta Medina
-=======
 **Author:** Christopher John Medina
->>>>>>> 7247b11a34daa9cb4606284d46071e41bbd915c3
 
 ---
 
-## Overview
+## What is Korra?
 
-Korra is a multi-agent AI system built with [LangGraph](https://github.com/langchain-ai/langgraph) that simulates how a modern CPU pipeline detects and resolves hazards. Each agent maps to a functional unit in a real processor pipeline, and the supervisor acts as the CPU Control Unit — decoding requests, routing them to the right worker, and applying resolution strategies when pipeline conflicts arise.
+Korra is an intelligent multi-agent AI assistant capable of understanding natural language requests and routing them to the right specialized agent to get the job done. Whether you need to look something up on the web, query a database, or analyze code, Korra figures out what you need and handles it — automatically.
 
-The system implements all four classical CPU hazard types — structural, data forwarding, data stalling, and control — entirely in software using conversational AI agents.
-
----
-
-## Architecture
-
-```
-                        ┌─────────────────────────┐
-                        │   Supervisor Agent       │
-                        │   (CPU Control Unit)     │
-                        └────────────┬────────────┘
-               ┌────────────────────┼────────────────────┐
-               ▼                    ▼                    ▼
-   ┌───────────────────┐  ┌──────────────────┐  ┌──────────────────────┐
-   │  DB Agent         │  │  ALU Agent       │  │  Branch Agent        │
-   │  (Memory Unit)    │  │  (Arithmetic)    │  │  (Decision Routing)  │
-   └───────────────────┘  └──────────────────┘  └──────────────────────┘
-```
-
-The supervisor evaluates every incoming request, decodes its intent, and dispatches it to the correct worker agent — mirroring how a real CPU Control Unit routes instructions to functional units.
+Built using [LangGraph](https://github.com/langchain-ai/langgraph) and powered by OpenAI's large language models, Korra orchestrates a team of specialized agents that work together like a pipeline, each handling a distinct type of task.
 
 ---
 
-## What It Does
+## Features
 
-### Structural Hazard Detection & Resolution
-When two requests compete for the same worker simultaneously, Korra detects the conflict and serializes execution using per-worker FIFO queues — preventing resource contention the same way a CPU stalls a conflicting instruction until the shared unit is free.
-
-### Data Hazard — Forwarding
-When a downstream agent depends on a result that hasn't been written back yet, Korra bypasses the write-back stage and forwards the output directly — eliminating the stall that would otherwise occur.
-
-### Data Hazard — Stalling (Bubble Cycles)
-For load-use dependencies that forwarding can't resolve, Korra inserts bubble cycles into the pipeline, holding back dependent operations until the required value is ready — matching real processor behavior under true data dependencies.
-
-### Control Hazard — Speculative Execution & Flush
-Korra speculatively dispatches instructions down the predicted execution path. If the prediction is wrong (e.g., "no record found"), it detects the misprediction, flushes the speculative queue, and reroutes to the correct error or help path — just like a branch misprediction flush in a real CPU pipeline.
+- **Web Search** — Korra can search the internet in real time using Tavily to answer questions, find information, and retrieve up-to-date data.
+- **Database Lookup** — Korra queries structured databases to retrieve and manage stored data on demand.
+- **Code Analysis** — Korra reads, explains, and analyzes Python, C, C++, and RISC-V assembly code — identifying logic, bugs, and structure.
+- **Intelligent Routing** — A supervisor agent acts as the brain, decoding each request and dispatching it to the most appropriate worker automatically.
+- **Conflict Resolution** — Korra manages concurrent requests gracefully, ensuring agents don't step on each other and results are always delivered correctly.
+- **File Statistics** — Korra can inspect and report statistics on files using a native C-backed tool.
 
 ---
 
-## Project Structure
+## Built With
 
-```
-korra/
-├── src/react_agent/
-│   ├── graph.py              # Main supervisor graph + all hazard mechanisms
-│   ├── supervisor_agent.py   # CPU Control Unit (routing logic)
-│   ├── db_agent.py           # Database Search Agent (Memory Unit)
-│   ├── alu_agent.py          # Code Analysis Agent (ALU)
-│   ├── branch_agent.py       # Decision Routing Agent (Branch Unit)
-│   ├── hazard_logger.py      # Hazard event logging for all four types
-│   ├── prompts.py            # System prompt definitions
-│   ├── state.py              # Shared graph state
-│   ├── context.py            # Runtime context configuration
-│   ├── tools.py              # LangChain tools (Tavily search, etc.)
-│   ├── utils.py              # Utility functions
-│   └── tools/
-│       ├── file_stats_tool.py  # File statistics tool
-│       └── file_stats.c        # Native C helper for file stats
-├── langgraph.json            # LangGraph graph entry point config
-├── pyproject.toml            # Project dependencies
-├── Dockerfile                # Container deployment config
-├── Makefile                  # Dev shortcuts
-├── .env.example              # Required environment variables
-└── README.md
-```
+- [LangGraph](https://github.com/langchain-ai/langgraph) — multi-agent orchestration framework
+- [LangChain](https://github.com/langchain-ai/langchain) — LLM tooling and integrations
+- [langgraph-supervisor](https://github.com/langchain-ai/langgraph-supervisor) — supervisor agent pattern for multi-agent routing
+- Python 3.11+
+
+## APIs Used
+
+- [OpenAI API](https://platform.openai.com/) — language model powering all agents (`gpt-4o` / `ChatOpenAI`)
+- [Tavily Search API](https://tavily.com/) — real-time web search tool used by the ALU and Branch agents
+- [LangSmith API](https://smith.langchain.com/) — tracing and observability for agent runs
+- [GitHub API](https://docs.github.com/en/rest) *(optional)* — search and retrieve GitHub repositories
 
 ---
 
@@ -88,7 +45,7 @@ korra/
 
 - Python 3.11+
 - [LangGraph CLI](https://github.com/langchain-ai/langgraph-studio)
-- API keys for Anthropic and/or OpenAI (and optionally Tavily)
+- API keys for OpenAI, Tavily, and LangSmith
 
 ### Setup
 
@@ -105,9 +62,11 @@ korra/
 
 3. **Add your API keys to `.env`:**
    ```
-   ANTHROPIC_API_KEY=your-anthropic-key
+   LANGSMITH_PROJECT=new-agent
+   LANGSMITH_API_KEY=your-langsmith-key
    OPENAI_API_KEY=your-openai-key
    TAVILY_API_KEY=your-tavily-key
+   #GITHUB_TOKEN=your-github-token
    ```
 
 4. **Install dependencies:**
@@ -122,24 +81,27 @@ korra/
 
 ---
 
-## Dependencies
+## Project Structure
 
-| Package | Purpose |
-|---|---|
-| `langgraph` | Multi-agent graph framework |
-| `langchain-anthropic` | Claude model integration |
-| `langchain-openai` | GPT model integration |
-| `langchain-tavily` | Web search tool |
-| `python-dotenv` | Environment variable management |
+```
+korra/
+├── src/react_agent/
+│   ├── graph.py              # Main supervisor graph and agent orchestration
+│   ├── supervisor_agent.py   # Request routing and control logic
+│   ├── db_agent.py           # Database search agent
+│   ├── alu_agent.py          # Code analysis agent
+│   ├── branch_agent.py       # Decision routing agent
+│   ├── tools.py              # Web search and other tools
+│   ├── prompts.py            # System prompt definitions
+│   ├── state.py              # Shared agent state
+│   ├── utils.py              # Utility functions
+│   └── tools/
+│       ├── file_stats_tool.py
+│       └── file_stats.c
+├── langgraph.json
+├── pyproject.toml
+├── Dockerfile
+├── .env.example
+└── README.md
+```
 
----
-
-## Model Configuration
-
-The system defaults to `claude-sonnet-4-5-20250929`. To switch models, update the model string in `src/react_agent/context.py` or pass it at runtime in LangGraph Studio.
-
----
-
-## License
-
-MIT
