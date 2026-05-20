@@ -1,127 +1,106 @@
-# Campsite Availability Checker
+# Patty AI Agent
 
-Automatically monitors campsite availability across Southern California and beyond. Polls booking platforms every 15 minutes and sends Discord notifications when new tent sites open up — with weekends (Fri–Sun) highlighted and prioritized.
+**Author:** Christopher John Medina
 
-Deployed as an Azure Functions timer trigger with persistent state via Azure Table Storage.
+---
+
+## What is Patty?
+
+Patty is an intelligent multi-agent AI assistant capable of understanding natural language requests and routing them to the right specialized agent to get the job done. Whether you need to look something up on the web, query a database, or analyze code, Patty figures out what you need and handles it — automatically.
+
+Built using [LangGraph](https://github.com/langchain-ai/langgraph) and powered by OpenAI's large language models, Patty orchestrates a team of specialized agents that work together like a pipeline, each handling a distinct type of task.
 
 ---
 
 ## Features
 
-- Monitors 23 campgrounds across Recreation.gov and ReserveCalifornia
-- Filters to tent/standard sites only (excludes RV, hookup, electric, cabin, group, yurt)
-- Detects new openings by diffing current availability against last known state
-- Prioritizes weekend dates (Friday–Sunday) in notifications
-- Shows site numbers when available
-- `@everyone` Discord ping on new openings
-- Runs continuously on Azure — no need to keep your computer on
+- **Web Search** — Patty can search the internet in real time using Tavily to answer questions, find information, and retrieve up-to-date data.
+- **Database Lookup** — Patty queries structured databases to retrieve and manage stored data on demand.
+- **Code Analysis** — Patty reads, explains, and analyzes Python, C, C++, and RISC-V assembly code — identifying logic, bugs, and structure.
+- **Intelligent Routing** — A supervisor agent acts as the brain, decoding each request and dispatching it to the most appropriate worker automatically.
+- **Conflict Resolution** — Patty manages concurrent requests gracefully, ensuring agents don't step on each other and results are always delivered correctly.
+- **File Statistics** — Patty can inspect and report statistics on files using a native C-backed tool.
 
 ---
+
+## Built With
+
+- [LangGraph](https://github.com/langchain-ai/langgraph) — multi-agent orchestration framework
+- [LangChain](https://github.com/langchain-ai/langchain) — LLM tooling and integrations
+- [langgraph-supervisor](https://github.com/langchain-ai/langgraph-supervisor) — supervisor agent pattern for multi-agent routing
+- Python 3.11+
 
 ## APIs Used
 
-### Recreation.gov RIDB API
-- **Endpoint:** `https://www.recreation.gov/api/camps/availability/campground/{facility_id}/month`
-- **Auth:** Free API key from [ridb.recreation.gov/profile](https://ridb.recreation.gov/profile)
-- **Used for:** National parks and forests — Joshua Tree, Yosemite, Sequoia, Big Bear, Idyllwild
-
-### ReserveCalifornia Tyler/RDR API
-- **Endpoint:** `https://california-rdr.prod.cali.rd12.recreation-management.tylerapp.com/rdr/search/place`
-- **Auth:** None required (public API used by reservecalifornia.com)
-- **Used for:** California state parks — Doheny, Carlsbad, Palomar, Anza-Borrego, Lake Tahoe, and more
-
-### Discord Webhooks
-- **Docs:** [discord.com/developers/docs/resources/webhook](https://discord.com/developers/docs/resources/webhook)
-- **Used for:** Sending campsite availability notifications with `@everyone` to a Discord channel
-
-### Azure Functions (Timer Trigger)
-- Runs the availability check on a 15-minute cron schedule (`0 */15 * * * *`)
-- Flex Consumption plan — Linux, Python 3.13
-
-### Azure Table Storage
-- Stores last-known availability state per campground across invocations
-- Enables diff-based new-opening detection
+- [OpenAI API](https://platform.openai.com/) — language model powering all agents (`gpt-4o` / `ChatOpenAI`)
+- [Tavily Search API](https://tavily.com/) — real-time web search tool used by the ALU and Branch agents
+- [LangSmith API](https://smith.langchain.com/) — tracing and observability for agent runs
+- [GitHub API](https://docs.github.com/en/rest) *(optional)* — search and retrieve GitHub repositories
 
 ---
 
-## Watched Campgrounds
+## Getting Started
 
-See [WATCHED_CAMPGROUNDS.md](WATCHED_CAMPGROUNDS.md) for the full list with distances, PlaceIds, and facility IDs.
+### Prerequisites
 
----
+- Python 3.11+
+- [LangGraph CLI](https://github.com/langchain-ai/langgraph-studio)
+- API keys for OpenAI, Tavily, and LangSmith
 
-## Setup
+### Setup
 
-### 1. Clone the repo
+1. **Clone the repo:**
+   ```bash
+   git clone https://github.com/cjmedina02/Patty-Agentic-AI-Assistant.git
+   cd Patty-Agentic-AI-Assistant
+   ```
 
-```bash
-git clone <your-repo-url>
-cd campsite_agent
-```
+2. **Create your `.env` file:**
+   ```bash
+   cp .env.example .env
+   ```
 
-### 2. Create a virtual environment
+3. **Add your API keys to `.env`:**
+   ```
+   LANGSMITH_PROJECT=new-agent
+   LANGSMITH_API_KEY=your-langsmith-key
+   OPENAI_API_KEY=your-openai-key
+   TAVILY_API_KEY=your-tavily-key
+   #GITHUB_TOKEN=your-github-token
+   ```
 
-```bash
-python -m venv .venv
-source .venv/bin/activate   # Windows: .venv\Scripts\activate
-pip install -r requirements.txt
-```
+4. **Install dependencies:**
+   ```bash
+   pip install -e .
+   ```
 
-### 3. Configure environment variables
-
-```bash
-cp .env.campsite.example .env
-```
-
-Fill in your values:
-
-| Variable | Description |
-|---|---|
-| `DISCORD_WEBHOOK_URL` | Your Discord channel webhook URL |
-| `RECREATION_GOV_API_KEY` | Free key from ridb.recreation.gov/profile |
-| `AZURE_STORAGE_CONNECTION_STRING` | Azure Portal → Storage Account → Access keys |
-| `CHECK_DATE_START` | Start of search window, e.g. `2026-06-01` |
-| `CHECK_DATE_END` | End of search window, e.g. `2026-08-31` |
-| `MAX_DISTANCE_MILES` | Max distance from 92126 (default: `300`) |
-
-### 4. Run locally
-
-```bash
-cd src
-python -c "from react_agent.campsite_agent import run_campsite_check; run_campsite_check(notify=False)"
-```
-
-### 5. Deploy to Azure
-
-With the Azure Functions VS Code extension:
-
-```
-Ctrl+Shift+P → Azure Functions: Deploy to Function App
-```
-
-Set the same environment variables in **Azure Portal → Function App → Configuration → Application settings**.
-
----
-
-## Adding Campgrounds
-
-Edit `WATCHED_CAMPGROUNDS` in `src/react_agent/campsite_agent.py`.
-
-**Recreation.gov:** Use the facility ID from the URL — `recreation.gov/camping/campgrounds/{id}`
-
-**ReserveCalifornia:** Find the `PlaceId` by opening DevTools (F12) on `reservecalifornia.com`, searching a park, and inspecting the `place` POST request payload in the Network tab.
+5. **Run with LangGraph CLI:**
+   ```bash
+   langgraph dev
+   ```
 
 ---
 
 ## Project Structure
 
 ```
-campsite_agent/
-├── function_app.py             # Azure Functions timer trigger entry point
-├── host.json                   # Azure Functions host config
-├── requirements.txt            # Python dependencies
-├── WATCHED_CAMPGROUNDS.md      # Full list of monitored campgrounds
-└── src/
-    └── react_agent/
-        └── campsite_agent.py   # Core checker, API clients, Discord notifier
+patty/
+├── src/react_agent/
+│   ├── graph.py              # Main supervisor graph and agent orchestration
+│   ├── supervisor_agent.py   # Request routing and control logic
+│   ├── db_agent.py           # Database search agent
+│   ├── alu_agent.py          # Code analysis agent
+│   ├── branch_agent.py       # Decision routing agent
+│   ├── tools.py              # Web search and other tools
+│   ├── prompts.py            # System prompt definitions
+│   ├── state.py              # Shared agent state
+│   ├── utils.py              # Utility functions
+│   └── tools/
+│       ├── file_stats_tool.py
+│       └── file_stats.c
+├── langgraph.json
+├── pyproject.toml
+├── Dockerfile
+├── .env.example
+└── README.md
 ```
