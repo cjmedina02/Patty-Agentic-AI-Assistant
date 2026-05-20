@@ -19,11 +19,11 @@ from langgraph.graph import StateGraph, START, END
 from langgraph.graph.message import add_messages
 from langgraph.prebuilt import ToolNode
 
-log = logging.getLogger("korra_branch")
+log = logging.getLogger("patty_branch")
 load_dotenv()
 
 SYSTEM_PROMPT = """
-You are the Decision/Routing Agent, functioning as the Branch/Control Unit of the Korra multi-agent architecture.
+You are the Decision/Routing Agent, functioning as the Branch/Control Unit of the Patty multi-agent architecture.
 
 **Your Sole Specialization:** Conditional evaluation, trade-off analysis, and strategic recommendations.
 
@@ -42,13 +42,13 @@ You are a high-level logic unit. You are STRICTLY FORBIDDEN from:
 class State(TypedDict):
     messages: Annotated[list[BaseMessage], add_messages]
     
-def initialize_korra() -> StateGraph:
+def initialize_patty() -> StateGraph:
     llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.5)
     tavily_tool = TavilySearch(max_results=2, include_answer=True)
     TOOLS = [tavily_tool]
     llm_with_tools = llm.bind_tools(TOOLS)
 
-    def korra(state: State) -> dict[str, list[BaseMessage]]:
+    def patty(state: State) -> dict[str, list[BaseMessage]]:
         messages = state["messages"]
         if not messages or not isinstance(messages[0], SystemMessage):
             messages = [SystemMessage(content=SYSTEM_PROMPT)] + messages
@@ -61,7 +61,7 @@ def initialize_korra() -> StateGraph:
         log.info(f"Branch operation {tool_name} auto-approved for pipeline execution.")
         return {"messages": []} 
 
-    def route_from_korra(state: State) -> str:
+    def route_from_patty(state: State) -> str:
         last_message = state["messages"][-1]
         if hasattr(last_message, "tool_calls") and last_message.tool_calls:
             return "human_approval"
@@ -69,7 +69,7 @@ def initialize_korra() -> StateGraph:
 
     def route_after_approval(state: State) -> str:
         last_message = state["messages"][-1]
-        if isinstance(last_message, ToolMessage): return "korra"
+        if isinstance(last_message, ToolMessage): return "patty"
         tool_name = last_message.tool_calls[0]["name"]
         if tool_name == "tavily_search": return "tavily_tool"
         return END
@@ -77,18 +77,18 @@ def initialize_korra() -> StateGraph:
     def tavily__tool(state: State): return ToolNode(tools=[tavily_tool]).invoke(state)
 
     graph_builder = StateGraph(State)
-    graph_builder.add_node("korra", korra)
+    graph_builder.add_node("patty", patty)
     graph_builder.add_node("human_approval", human_approval_node)
     graph_builder.add_node("tavily_tool", tavily__tool)
 
-    graph_builder.add_edge(START, "korra")
-    graph_builder.add_conditional_edges("korra", route_from_korra, ["human_approval", END])
+    graph_builder.add_edge(START, "patty")
+    graph_builder.add_conditional_edges("patty", route_from_patty, ["human_approval", END])
     graph_builder.add_conditional_edges("human_approval", route_after_approval, {
         "tavily_tool": "tavily_tool",
-        "korra": "korra"
+        "patty": "patty"
     })
-    graph_builder.add_edge("tavily_tool", "korra")
+    graph_builder.add_edge("tavily_tool", "patty")
 
     return graph_builder.compile()
 
-graph = initialize_korra()
+graph = initialize_patty()

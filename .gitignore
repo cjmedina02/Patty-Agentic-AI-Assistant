@@ -162,3 +162,15 @@ cython_debug/
 #.idea/
 
 .langgraph_api
+
+.python_packages
+
+# Azure Functions
+local.settings.json
+.azure/
+
+# Campsite state (local fallback)
+campsite_state.json
+
+# VS Code
+.vscode/

@@ -10,7 +10,7 @@ Version: 1.0
 License: Educational Use
 
 Description:
-    Standardized hazard logger for Project 15 (Korra – Hazard Detection
+    Standardized hazard logger for Project 15 (Patty – Hazard Detection
     & Resolution). Provides one helper per required log tag so every student
     submission produces an identically formatted trace that graders can scan
     for exact tag strings.

@@ -4,16 +4,20 @@ Author: Christopher John Macabenta Medina
 Course: COMPE 475 - Microprocessors
 Institution: San Diego State University
 Module: 15 - Hazard Detection & Resolution (Section 4 - Final)
-Version: 4.0
+Version: 5.0
 
 Description:
-    Final integrated system. Layers all four hazard mechanisms on top
-    of the Project 14 supervisor:
+    Final integrated system + Campsite Checker extension.
+    Layers all four hazard mechanisms on top of the Project 14 supervisor
+    and adds a 4th functional unit: campsite_checker_agent.
+
       Section 1 - Structural Hazard: per-worker FIFO queue + serialization
       Section 2 - Data Hazard Forwarding: DB output bypassed to Decision
       Section 3 - Data Hazard Stalling: load-use bubble cycles
       Section 4 - Control Hazard: speculative queue tracker + flush on
                   'no record found', then reroute to error/help path
+      Extension  - Campsite Checker Agent: Recreation.gov + ReserveCA
+                   availability polling, Discord notifications, Azure state
     All detection logic lives in `_wire_hazard_detection`, which wraps
     each compiled worker graph's ainvoke.
 """
@@ -34,6 +38,7 @@ from langgraph_supervisor import create_supervisor, create_forward_message_tool
 from react_agent.db_agent import graph as db_graph
 from react_agent.alu_agent import graph as alu_graph
 from react_agent.branch_agent import graph as branch_graph
+from react_agent.campsite_agent import graph as campsite_graph
 
 # Per rubric: starter hazard_logger helpers for all four mechanisms
 from react_agent.hazard_logger import (
@@ -55,7 +60,7 @@ logging.basicConfig(
     format="%(asctime)s [%(levelname)s] %(message)s",
     datefmt="%H:%M:%S"
 )
-log = logging.getLogger("korra_supervisor")
+log = logging.getLogger("patty_supervisor")
 
 load_dotenv()
 
@@ -67,12 +72,14 @@ busy_workers = {
     "database_search_agent": None,
     "code_analysis_agent": None,
     "decision_routing_agent": None,
+    "campsite_checker_agent": None,
 }
 
 worker_queues = {
     "database_search_agent": [],
     "code_analysis_agent": [],
     "decision_routing_agent": [],
+    "campsite_checker_agent": [],
 }
 
 # ============================================================
@@ -374,6 +381,7 @@ def _wire_hazard_detection(worker_graph, worker_name):
 _wire_hazard_detection(db_graph, "database_search_agent")
 _wire_hazard_detection(alu_graph, "code_analysis_agent")
 _wire_hazard_detection(branch_graph, "decision_routing_agent")
+_wire_hazard_detection(campsite_graph, "campsite_checker_agent")
 
 # ============================================================
 # WORKER REGISTRATION
@@ -388,21 +396,30 @@ alu_graph.description = "Use this worker ONLY when the request requires analyzin
 branch_graph.name = "decision_routing_agent"
 branch_graph.description = "Use this worker ONLY when the request requires decision-making, strategic routing, or recommendations based on criteria and trade-offs."
 
+campsite_graph.name = "campsite_checker_agent"
+campsite_graph.description = (
+    "Use this worker ONLY when the request involves campsite availability, "
+    "camping reservations, campgrounds, or outdoor trip planning. "
+    "It checks Recreation.gov and Reserve California for tent site openings "
+    "and can send Discord notifications when dates open up."
+)
+
 # ============================================================
 # SUPERVISOR CONFIGURATION (Control Unit Microcode)
 # ============================================================
 
 SUPERVISOR_PROMPT = """
-You are the Supervisor Agent, functioning as the Control Unit of the Korra multi-agent microprocessor architecture.
+You are the Supervisor Agent, functioning as the Control Unit of the Patty multi-agent microprocessor architecture.
 
 **Your Role (Instruction Decode & Dispatch):**
 You read the user's request, decode the operations, and ensure every required functional unit is invoked.
 
 **WORKER COVERAGE RULE (STRICT PIPELINING):**
 A single request may contain multiple verb categories. Where applicable, invoke a separate specialist worker for EACH part of the prompt:
-1. **'Look up / Retrieve / Query / Check'** -> `database_search_agent`.
+1. **'Look up / Retrieve / Query / Check student records'** -> `database_search_agent`.
 2. **'Analyze / Explain / Break down code'** -> `code_analysis_agent`.
 3. **'Recommend / Decide / Determine / Should I'** -> `decision_routing_agent`.
+4. **'Campsite / Camping / Reservations / Check availability / Outdoor trip'** -> `campsite_checker_agent`.
 
 **DATA HAZARD FORWARDING (HIGHEST PRIORITY -- CHECK THIS FIRST):**
 If ANY message in the conversation starts with "[FORWARDED:", the runtime has already invoked the downstream specialist via the forwarding bypass. In that case:
@@ -434,7 +451,7 @@ llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.0)
 forward_tool = create_forward_message_tool("supervisor")
 
 graph = create_supervisor(
-    [db_graph, alu_graph, branch_graph],
+    [db_graph, alu_graph, branch_graph, campsite_graph],
     model=llm,
     prompt=SUPERVISOR_PROMPT,
     tools=[forward_tool]

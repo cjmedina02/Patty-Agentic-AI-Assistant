@@ -21,11 +21,11 @@ from langgraph.prebuilt import ToolNode
 # Custom Tools
 from react_agent.database_tool import manage_files
 
-log = logging.getLogger("korra_db")
+log = logging.getLogger("patty_db")
 load_dotenv()
 
 SYSTEM_PROMPT = """
-You are the Database Search Agent, functioning as the Memory and Load-Store Unit (LSU) of the Korra multi-agent architecture.
+You are the Database Search Agent, functioning as the Memory and Load-Store Unit (LSU) of the Patty multi-agent architecture.
 
 **Your Sole Specialization:** Raw data storage and retrieval operations using the `manage_files` tool.
 
@@ -45,12 +45,12 @@ You are a raw memory interface. You are STRICTLY FORBIDDEN from performing the f
 class State(TypedDict):
     messages: Annotated[list[BaseMessage], add_messages]
     
-def initialize_korra() -> StateGraph:
+def initialize_patty() -> StateGraph:
     llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.0)
     TOOLS = [manage_files]
     llm_with_tools = llm.bind_tools(TOOLS)
 
-    def korra(state: State) -> dict[str, list[BaseMessage]]:
+    def patty(state: State) -> dict[str, list[BaseMessage]]:
         messages = state["messages"]
         if not messages or not isinstance(messages[0], SystemMessage):
             messages = [SystemMessage(content=SYSTEM_PROMPT)] + messages
@@ -63,7 +63,7 @@ def initialize_korra() -> StateGraph:
         log.info(f"Memory operation {tool_name} auto-approved for pipeline execution.")
         return {"messages": []} 
 
-    def route_from_korra(state: State) -> str:
+    def route_from_patty(state: State) -> str:
         last_message = state["messages"][-1]
         if hasattr(last_message, "tool_calls") and last_message.tool_calls:
             return "human_approval"
@@ -71,21 +71,21 @@ def initialize_korra() -> StateGraph:
 
     def route_after_approval(state: State) -> str:
         last_message = state["messages"][-1]
-        if isinstance(last_message, ToolMessage): return "korra"
+        if isinstance(last_message, ToolMessage): return "patty"
         return "database_tool"
 
     def database__tool(state: State): return ToolNode(tools=[manage_files]).invoke(state)
 
     graph_builder = StateGraph(State)
-    graph_builder.add_node("korra", korra)
+    graph_builder.add_node("patty", patty)
     graph_builder.add_node("human_approval", human_approval_node)
     graph_builder.add_node("database_tool", database__tool)
 
-    graph_builder.add_edge(START, "korra")
-    graph_builder.add_conditional_edges("korra", route_from_korra, ["human_approval", END])
-    graph_builder.add_conditional_edges("human_approval", route_after_approval, {"database_tool": "database_tool", "korra": "korra"})
-    graph_builder.add_edge("database_tool", "korra")
+    graph_builder.add_edge(START, "patty")
+    graph_builder.add_conditional_edges("patty", route_from_patty, ["human_approval", END])
+    graph_builder.add_conditional_edges("human_approval", route_after_approval, {"database_tool": "database_tool", "patty": "patty"})
+    graph_builder.add_edge("database_tool", "patty")
 
     return graph_builder.compile()
 
-graph = initialize_korra()
+graph = initialize_patty()

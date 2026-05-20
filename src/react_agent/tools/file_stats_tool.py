@@ -12,7 +12,7 @@ License: Educational Use
 
 Description:
     This file is part of the Project 7 for COMPE 475, Section 9.
-    Students containerize their Korra AI agent from Section 4 using
+    Students containerize their Patty AI agent from Section 4 using
     Docker. This section demonstrates modern deployment practices by
     packaging the Python application, C tool, and all dependencies
     into a portable container. The integration pipeline:

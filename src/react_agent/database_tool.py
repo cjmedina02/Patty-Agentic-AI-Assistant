@@ -10,7 +10,7 @@ License: Educational Use
 
 Description:
     Custom LangGraph tool providing SQLite CRUD operations for 
-    persistent file storage in the Korra AI agent.
+    persistent file storage in the Patty AI agent.
     Demonstrates fundamental data manipulation patterns:
         • Create: Save new files to the database
         • Read/List: Retrieve file contents or list all files
@@ -38,7 +38,7 @@ DATA_DIR = "/app/data"
 os.makedirs(DATA_DIR, exist_ok=True)
 
 # Save the database inside the mapped volume
-DB_NAME = os.path.join(DATA_DIR, "korra_storage.db")
+DB_NAME = os.path.join(DATA_DIR, "patty_storage.db")
 
 # ============================================================
 # DATABASE FUNCTIONS

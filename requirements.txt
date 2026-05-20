@@ -1,0 +1,17 @@
+# Core LangGraph / LangChain stack (inherited from Korra)
+langgraph>=1.0.0
+langchain>=0.2.14
+langchain-openai>=0.1.22
+langchain-anthropic>=0.1.23
+langchain-tavily>=0.1
+python-dotenv>=1.0.1
+
+# Campsite checker dependencies
+requests>=2.31.0
+
+# Azure Functions runtime + storage
+azure-functions
+azure-data-tables>=12.5.0
+
+# langgraph supervisor extension
+langgraph-supervisor>=0.0.1

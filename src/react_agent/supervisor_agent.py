@@ -34,7 +34,7 @@ logging.basicConfig(
     format="%(asctime)s [%(levelname)s] %(message)s",
     datefmt="%H:%M:%S"
 )
-log = logging.getLogger("korra_supervisor")
+log = logging.getLogger("patty_supervisor")
 
 load_dotenv()
 
@@ -70,7 +70,7 @@ def decision_routing_agent(messages: list) -> str:
 # ============================================================
 
 SUPERVISOR_PROMPT = """
-You are the Supervisor Agent, functioning as the Control Unit of the Korra multi-agent microprocessor architecture.
+You are the Supervisor Agent, functioning as the Control Unit of the Patty multi-agent microprocessor architecture.
 
 **Your Role (Instruction Decode & Dispatch):**
 You do not execute tasks yourself. You read the user's request, decode what needs to be done, and dispatch the work to the correct specialized worker agents.
